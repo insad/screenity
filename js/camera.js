@@ -8,6 +8,7 @@ var output = new MediaStream();
 var audioCtx;
 var destination;
 var micsource;
+var constraints
 var cancel = false;
 var recording = false;
 var newwindow = null;
@@ -17,13 +18,6 @@ var htmlinject = "<video id='injected-video' style='height:100%;position:absolut
 document.body.innerHTML += htmlinject;
 var video = document.getElementById("injected-video");
 
-// Video dimensions and settings
-var constraints = {
-  audio: false,
-  video: {width:1920, height:1080}
-};
-
-navigator.mediaDevices.getUserMedia(constraints).then(startStreaming).catch(streamingError);
 function startStreaming(stream) {
     camerastream = stream;
     
@@ -80,13 +74,12 @@ function startRecording(){
         mediaRecorder.onstop = () => {
             // Show default icon
             chrome.browserAction.setIcon({path: "../assets/extension-icons/logo-32.png"});
-            
-            chrome.runtime.sendMessage({type: "end-camera-recording"});
             recording = false;
             if (!cancel) {
-                newwindow = window.open('../html/videoeditor.html');
+                newwindow = window.open('../html/videoeditor.html', "_blank");
                 newwindow.recordedBlobs = recordedBlobs;
             }
+            chrome.runtime.sendMessage({type: "end-camera-recording"});
             camerastream.getTracks().forEach(function(track) {
               track.stop();
             });
@@ -146,7 +139,17 @@ chrome.storage.sync.get(['flip'], function(result) {
 chrome.storage.sync.get(['camera'], function(result) {
     if (result.camera != 0) {
         updateCamera(result.camera);
+        constraints = {
+          audio: false,
+          video: {deviceId:result.camera, width:1920, height:1080}
+        };
+    } else {
+        constraints = {
+          audio: false,
+          video: {deviceId:result.camera, width:1920, height:1080}
+        };
     }
+    navigator.mediaDevices.getUserMedia(constraints).then(startStreaming).catch(streamingError);
 });
 
 // Listen for messages

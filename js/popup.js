@@ -24,6 +24,11 @@ $(document).ready(function(){
         } else {
             $("#quality").html(chrome.i18n.getMessage("highest_quality"))
         }
+        if (result.fps == "60") {
+            $("#fps").html("30FPS video");
+        } else {
+            $("#fps").html("60FPS video")
+        }
         if ($(".type-active").attr("id") == "tab-only") {
            $(".type-active").find("img").attr("src", chrome.extension.getURL('./assets/images/popup/tab-only.svg'));
         } else if ($(".type-active").attr("id") == "desktop") {
@@ -51,6 +56,7 @@ $(document).ready(function(){
             recording = false;
             $("#record").html(chrome.i18n.getMessage("start_recording"));
             chrome.runtime.sendMessage({type: "stop-save"}); 
+            window.close();
         }
     }
     
@@ -212,6 +218,15 @@ $(document).ready(function(){
         }
     });
     
+    // Show awards overlay (temporary event)
+    $("#awards").on("click", function(e){
+        if ($("#awards-open").hasClass("countactive")) {
+            $("#awards-open").removeClass("countactive");
+        } else {
+            $("#awards-open").addClass("countactive");
+        }
+    });
+    
     // Show countdown dropdown
     $("#count-select").on("click", function(e){
         e.preventDefault(); 
@@ -237,6 +252,9 @@ $(document).ready(function(){
         if (!$("#more-select").is(e.target) && $("#more-select").has(e.target).length === 0 && !$("#more").is(e.target) && $("#more").has(e.target).length === 0) {
             $("#more-select").removeClass("countactive");
         }
+        if (!$("#awards-open").is(e.target) && $("#awards-open").has(e.target).length === 0 && !$("#awards").is(e.target) && $("#awards").has(e.target).length === 0) {
+            $("#awards-open").removeClass("countactive");
+        }
     })
     
     // Go to the shortcuts page in Chrome (workaround, chrome:// links are a local resource so they can't be triggered via a normal link)
@@ -259,6 +277,23 @@ $(document).ready(function(){
                     quality: "max"
                 });
                 $("#quality").html(chrome.i18n.getMessage("smaller_file_size"));
+            }
+        });
+    });
+    
+    // Higher or lower FPS for the recording
+    $("#fps").on("click", function(e){
+        chrome.storage.sync.get(['fps'], function(result) {
+            if (result.fps == "60") {
+                chrome.storage.sync.set({
+                    fps: "30"
+                });
+                $("#fps").html("60FPS video");
+            } else {
+                chrome.storage.sync.set({
+                    fps: "max"
+                });
+                $("#fps").html("30FPS video");
             }
         });
     });
